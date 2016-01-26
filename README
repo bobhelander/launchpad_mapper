@@ -14,6 +14,10 @@ Download the FMMT666 launchpad files and place in this project's folder.
 Plug in both of the Arduino USB ports into the computer.
 Download and install the Arduino drivers if necessary.  Instructions can be
 found at:  https://www.arduino.cc/en/Guide/ArduinoDue  See the section "Installing Drivers for the Due"
+Upload the keyboard_mapper.ino program to the Due
+ See section "Uploading Code to the Due" in "https://www.arduino.cc/en/Guide/ArduinoDue"
+ Note: You must use Arduino IDE 1.5 or later to program the Due. "https://www.arduino.cc/en/Main/Software#toc3"
+
 
 Set the Due up at COMM port 6
 Note: if you require a different port change the string 'COM6' in the launchpad_mapper.py file.
