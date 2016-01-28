@@ -269,7 +269,7 @@ def main():
                 color_value = color_cycle()
 
                 # Update the display
-                for button in chain(pad_state):
+                for button in chain(*pad_state):  # Flatten out the 2d array
                     button.draw(launchpad, color_value)
 
                 # Check for button event
