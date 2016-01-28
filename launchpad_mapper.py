@@ -282,6 +282,9 @@ def main():
                     continue
 
                 time.sleep(.1)
+
+                arduino.key_release(0x00) # Release all keys
+
         except ShutdownException, _ex:
             pass
         except Exception, ex:
