@@ -1,5 +1,6 @@
 launchpad_mapper
 Program to allow mapping of the Novation Launchpad buttons to USB keystrokes.
+Development notes:  "http://www.bobhelander.com/wp/?p=7"
 
 Hardware Required:
 Novation Launchpad S  "http://www.amazon.com/Novation-Launchpad-64-Button-Ableton-Controller/dp/B00CDINK72"
