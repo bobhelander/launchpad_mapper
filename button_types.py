@@ -31,9 +31,10 @@ class ButtonKey(object):
     ButtonKey:  Base class for all the button types.
     """
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, description=""):
         self._x = x
         self._y = y
+        self.description = description
 
     @property
     def x(self):
@@ -80,8 +81,8 @@ class ShutdownButton(ButtonKey):
     ShutdownButton: Raised the ShutdownException when pressed.
     """
 
-    def __init__(self, x, y):
-        super(ShutdownButton, self).__init__(x, y)
+    def __init__(self, x, y, description=""):
+        super(ShutdownButton, self).__init__(x, y, description=description)
 
     def pressed(self, launchpad, port):
         raise ShutdownException("Shutdown")
@@ -106,8 +107,8 @@ class InputButton(ButtonKey):
     """
 
     def __init__(self, x, y, red=0, green=0, pressed_red=3, pressed_green=0,
-                 key_output=None, flashing=False):
-        super(InputButton, self).__init__(x, y)
+                 key_output=None, flashing=False, description=""):
+        super(InputButton, self).__init__(x, y, description=description)
         self._red = red
         self._green = green
         self.pressed_red = pressed_red
@@ -173,8 +174,8 @@ class FlashingButton(ButtonKey):
     FlashingButton:  Simple button that flashes while pressed
     """
 
-    def __init__(self, x, y):
-        super(FlashingButton, self).__init__(x, y)
+    def __init__(self, x, y, description=""):
+        super(FlashingButton, self).__init__(x, y, description=description)
         self._pressed = False
 
     def pressed(self, launchpad, arduino):
@@ -208,8 +209,9 @@ class ToggleButton(ButtonKey):
     """
 
     def __init__(self, x, y, red=0, green=3, toggled_red=3, toggled_green=0,
-                 key_output_set=None, key_output_cleared=None, flashing=False, key_duration=.2):
-        super(ToggleButton, self).__init__(x, y)
+                 key_output_set=None, key_output_cleared=None, flashing=False, key_duration=.2,
+                 description=""):
+        super(ToggleButton, self).__init__(x, y, description=description)
         self._toggled = False
         self.red = red
         self.green = green
