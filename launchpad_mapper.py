@@ -22,39 +22,67 @@ import time
 from launchpad import Launchpad
 from button_types import ShutdownException, ButtonKey
 from elite_mapping import setup_ship
-from arduino import Arduino
+from trade_extensions import setup_trade
+from arduino_mock import Arduino
 from itertools import chain
+from speech import say
 
 
-def handle_event(launchpad, arduino, button_key, button_pressed):
+def handle_event(launchpad, arduino, button_key, button_pressed, pad_states, current_pad_state):
     """
     Call the method on the button type to handle the event
     """
+    kwargs = {"launchpad": launchpad,
+              "arduino": arduino,
+              "pad_states": pad_states,
+              "current_pad_state": current_pad_state}
 
     if button_pressed:
-        button_key.pressed(launchpad, arduino)
+        response = button_key.pressed(**kwargs)
+        if button_key.description:
+            print button_key.description
+            say(button_key.description)
     else:
-        button_key.released(launchpad, arduino)
+        response = button_key.released(**kwargs)
+
+    return response
 
 
-def color_cycle():
-    """
-    Returns a value that cycles between 0 and 3
-    """
-    # Get ticks as an integer
-    ticks = int(float('%0.3f' % time.time()) * 1000)
-    # Only use < 1000
-    millisecond = ticks % 1000
-    # Counting up in the first half of the second and down the other half
-    count_down = (millisecond / 500)
-    # 0-150 = 3 151-300 = 2 301-450 = 1 451-499 = 0 500-650 = 0 651-800 = 1 801-950 = 2 951-999 = 3
-    return int((millisecond - 500) / 150) if count_down else 3 - millisecond / 150
+def write_changes(launchpad, new_buffer, old_buffer):
+    for index in range(0, len(new_buffer)):
+        if new_buffer[index] != old_buffer[index]:
+            if index > 120:  # Automap buttons
+                launchpad.midi.RawWrite(176, 104 + (index - 121), new_buffer[index])
+            else:
+                launchpad.midi.RawWrite(144, index, new_buffer[index])
 
+            old_buffer[index] = new_buffer[index]
 
 
 def main():
     launchpad = Launchpad()  # create a Launchpad instance
     launchpad.Open()         # start it
+    launchpad_buffer = [0 for _ in range(200)]    # LED color map
+    launchpad_buffer_cache = [0 for _ in range(200)]    # LED color map
+
+    # Reset the launchpad
+    launchpad.midi.RawWrite(176, 0, 0)
+
+    # Set X/Y Mode
+    launchpad.midi.RawWrite(176, 0, 1)
+
+    # Turn Flashing on
+    launchpad.midi.RawWrite(176, 0, 40)
+
+    # Control Duty cycle
+    # numerator = 16
+    # denominator = 4
+    # if numerator < 9:
+    #     value = (16 * (numerator - 1)) + (denominator - 3)
+    #     launchpad.midi.RawWrite(176, 30, value)
+    # else:
+    #     value = (16 * (numerator - 9)) + (denominator - 3)
+    #     launchpad.midi.RawWrite(176, 31, value)
 
     try:
         # Open communication to the Arduino
@@ -64,27 +92,37 @@ def main():
 
         # Prepare the 9X9 array of buttons to the list
         pad_states.append([[ButtonKey(x, y) for y in range(0, 9)] for x in range(0, 9)])
+        # Add another page
+        pad_states.append([[ButtonKey(x, y) for y in range(0, 9)] for x in range(0, 9)])
 
         # Update the array with the buttons that are mapped
         setup_ship(pad_states[0])
+        setup_trade(pad_states[1])
 
         current_pad_state = pad_states[0]
 
         try:
             while True:
-                color_value = color_cycle()
-
-                # Update the display
+                # Update the display buffer
                 for button in chain(*current_pad_state):  # Flatten out the 2d array
-                    button.draw(launchpad, color_value)
+                    button.draw(launchpad_buffer_cache)
+
+                # Write the display buffer
+                write_changes(launchpad, launchpad_buffer_cache, launchpad_buffer)
 
                 # Check for button event
                 button_event = launchpad.ButtonStateXY()
                 if button_event:
-                    handle_event(launchpad=launchpad,
-                                 arduino=arduino,
-                                 button_key=current_pad_state[button_event[0]][button_event[1]],
-                                 button_pressed=button_event[2])
+                    response = handle_event(launchpad=launchpad,
+                                            arduino=arduino,
+                                            button_key=current_pad_state[button_event[0]][button_event[1]],
+                                            button_pressed=button_event[2],
+                                            pad_states=pad_states,
+                                            current_pad_state=current_pad_state)
+                    # Was there a state change
+                    if response and "state" in response:
+                        current_pad_state = response.get("state")
+
                     continue
 
                 time.sleep(.1)

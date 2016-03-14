@@ -9,6 +9,8 @@ Adruino Due  "https://www.arduino.cc/en/Main/ArduinoBoardDue"
 Software Prerequisites:
 https://github.com/FMMT666/launchpad.py
 
+http://jampal.sourceforge.net/ptts.html
+
 Instructions:
 
 Download the FMMT666 launchpad files and place in this project's folder.

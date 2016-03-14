@@ -18,6 +18,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from utils import get_buffer_position, get_color
+from threading import Thread
+
 
 class ShutdownException(Exception):
     """
@@ -34,7 +37,10 @@ class ButtonKey(object):
     def __init__(self, x, y, description=""):
         self._x = x
         self._y = y
-        self.description = description
+        self._description = description
+        self._draw_position = get_buffer_position(x, y)
+        self.red = 0
+        self.green = 0
 
     @property
     def x(self):
@@ -44,36 +50,36 @@ class ButtonKey(object):
     def y(self):
         return self._y
 
-    def pressed(self, launchpad, arduino):
+    @property
+    def description(self):
+        return self._description
+
+    def pressed(self, launchpad=None, **kwargs):
         """
         Button has been pressed.  Default implementation turns on the red LED
 
         Parameters:
         launchpad  Launchpad object
-        arduino  Keyboard handler
         """
-        launchpad.LedCtrlXY(self.x, self.y, 0, 3)
+        self.green = 3
 
-    def released(self, launchpad, arduino):
+    def released(self, launchpad=None, **kwargs):
         """
         Button has been released.  Default implementation turns off all LEDs.
 
         Parameters:
         launchpad  Launchpad object
-        arduino  Keyboard handler
         """
-        launchpad.LedCtrlXY(self.x, self.y, 0, 0)
+        self.green = 0
 
-    def draw(self, launchpad, color_value):
+    def draw(self, draw_buffer):
         """
         Called every cycle.  About .1 seconds
 
         Parameters:
-        launchpad  Launchpad object
-        color_value  A value from 0-3 that cycles though the values.  Useful for
-                     a flashing LED.
+        draw_buffer  The raw drawing array for the launchpad
         """
-        pass
+        draw_buffer[self._draw_position] = get_color(self.red, self.green, flashing=True)
 
 
 class ShutdownButton(ButtonKey):
@@ -84,11 +90,68 @@ class ShutdownButton(ButtonKey):
     def __init__(self, x, y, description=""):
         super(ShutdownButton, self).__init__(x, y, description=description)
 
-    def pressed(self, launchpad, port):
+    def pressed(self, **kwargs):
         raise ShutdownException("Shutdown")
 
-    def released(self, launchpad, port):
+    def released(self, **kwargs):
         pass
+
+
+class FunctionButton(ButtonKey):
+
+    def __init__(self, x, y, red=0, green=3, callback=None, use_thread=False, description=""):
+        super(FunctionButton, self).__init__(x, y, description=description)
+        self.callback = callback
+        self.red = red
+        self.green = green
+        self.use_thread = use_thread
+        self.process = None
+
+    def pressed(self, **kwargs):
+        if self.use_thread:
+            self.process = Thread(target=self.callback)
+            self.process.start()
+        else:
+            self.callback()
+
+    def released(self, **kwargs):
+        if self.process:
+            self.process.join(.01)
+
+    def draw(self, draw_buffer):
+        if self.process and self.process.isAlive():
+            draw_buffer[self._draw_position] = get_color(self.red, self.green, flashing=True)
+        else:
+            draw_buffer[self._draw_position] = get_color(self.red, self.green)
+
+
+class PadPageButton(ButtonKey):
+    """
+    PadPageButton: Changes the current launchpad page
+
+    Initialization parameters:
+    x - X position of the button on the launchpad (0-8)
+    y - Y position of the button on the launchpad (0-8)
+    red - Intensity of the red LED while the button is toggled off (0-3).  Default 0
+    green - Intensity of the green LED while the button is toggled off (0-3).  Default 0
+    page - The page index that will be displayed when the button pressed.  Default 0
+    """
+
+    def __init__(self, x, y, red=0, green=3, page=0, description=""):
+        super(PadPageButton, self).__init__(x, y, description=description)
+        self._toggled = False
+        self.red = red
+        self.green = green
+        self.page = page
+
+    def pressed(self, pad_states=None, current_pad_state=None, **kwargs):
+        return {"state": pad_states[self.page]}
+
+    def released(self, **kwargs):
+        pass
+
+    def draw(self, draw_buffer):
+        draw_buffer[self._draw_position] = get_color(self.red, self.green)
 
 
 class InputButton(ButtonKey):
@@ -140,33 +203,31 @@ class InputButton(ButtonKey):
         """
         self._pressed_callback = method
 
-    def pressed(self, launchpad, arduino):
-        try:
-            if self._pressed_callback:
-                self._pressed_callback()
-            if self.key_output and not self._pressed:
-                arduino.key_down(self.key_output)
-        finally:
-            self._pressed = True
+    def pressed(self, arduino=None, **kwargs):
+        if arduino:
+            try:
+                if self._pressed_callback:
+                    self._pressed_callback()
+                if self.key_output and not self._pressed:
+                    arduino.key_down(self.key_output)
+            finally:
+                self._pressed = True
 
-    def released(self, launchpad, arduino):
-        try:
-            if self.key_output and self._pressed:
-                arduino.key_release(self.key_output)
-        finally:
-            self._pressed = False
+    def released(self, arduino=None, **kwargs):
+        if arduino:
+            try:
+                if self.key_output and self._pressed:
+                    arduino.key_release(self.key_output)
+            finally:
+                self._pressed = False
 
-    def draw(self, launchpad, color_value):
+    def draw(self, draw_buffer):
         if self._pressed:
-            if self.flashing:
-                # Use the cycling color_value if the pressed color is not zero
-                launchpad.LedCtrlXY(self.x, self.y,
-                                    color_value if self.pressed_red else 0,
-                                    color_value if self.pressed_green else 0)
-            else:
-                launchpad.LedCtrlXY(self.x, self.y, self.pressed_red, self.pressed_green)
+            draw_buffer[self._draw_position] = get_color(self.pressed_red,
+                                                         self.pressed_green,
+                                                         flashing=self.flashing)
         else:
-            launchpad.LedCtrlXY(self.x, self.y, self._red, self._green)
+            draw_buffer[self._draw_position] = get_color(self._red, self._green)
 
 
 class FlashingButton(ButtonKey):
@@ -178,17 +239,17 @@ class FlashingButton(ButtonKey):
         super(FlashingButton, self).__init__(x, y, description=description)
         self._pressed = False
 
-    def pressed(self, launchpad, arduino):
+    def pressed(self, **kwargs):
         self._pressed = True
 
-    def released(self, launchpad, arduino):
+    def released(self, **kwargs):
         self._pressed = False
 
-    def draw(self, launchpad, color_value):
+    def draw(self, draw_buffer):
         if self._pressed:
-            launchpad.LedCtrlXY(self.x, self.y, color_value, 0)
+            draw_buffer[self._draw_position] = get_color(3, 0, flashing=True)
         else:
-            launchpad.LedCtrlXY(self.x, self.y, 0, 0)
+            draw_buffer[self._draw_position] = get_color(0, 0)
 
 
 class ToggleButton(ButtonKey):
@@ -222,25 +283,21 @@ class ToggleButton(ButtonKey):
         self.flashing = flashing
         self.key_duration = key_duration
 
-    def pressed(self, launchpad, arduino):
-        self._toggled = not self._toggled
-        if self.key_output_set and self._toggled:
-            arduino.key_press(self.key_output_set, self.key_duration)
-        if self.key_output_cleared and not self._toggled:
-            arduino.key_press(self.key_output_cleared, self.key_duration)
+    def pressed(self, arduino=None, **kwargs):
+        if arduino:
+            self._toggled = not self._toggled
+            if self.key_output_set and self._toggled:
+                arduino.key_press(self.key_output_set, self.key_duration)
+            if self.key_output_cleared and not self._toggled:
+                arduino.key_press(self.key_output_cleared, self.key_duration)
 
-    def released(self, launchpad, arduino):
+    def released(self, **kwargs):
         pass
 
-    def draw(self, launchpad, color_value):
+    def draw(self, draw_buffer):
         if self._toggled:
-            if self.flashing:
-                launchpad.LedCtrlXY(self.x, self.y,
-                                    color_value if self.toggled_red else 0,
-                                    color_value if self.toggled_green else 0)
-            else:
-                launchpad.LedCtrlXY(self.x, self.y, self.toggled_red, self.toggled_green)
+            draw_buffer[self._draw_position] = get_color(self.toggled_red, self.toggled_green, flashing=self.flashing)
         else:
-            launchpad.LedCtrlXY(self.x, self.y, self.red, self.green)
+            draw_buffer[self._draw_position] = get_color(self.red, self.green)
 
 

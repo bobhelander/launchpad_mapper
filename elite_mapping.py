@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from button_types import ToggleButton, InputButton
+from button_types import ToggleButton, InputButton, PadPageButton, FlashingButton
 from systems_button_group import SystemsButtonGroup
 
 
@@ -31,18 +31,25 @@ def setup_ship(pad_state):
     pad_state[0][0] = InputButton(0, 0, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0xB1,  # ESC
                                   flashing=True, description="ESC")
+    #Change page
+    pad_state[1][0] = PadPageButton(1, 0, red=0, green=3, page=1, description="Change Page 1")
+
     #Deploy Heat Sink
-    pad_state[1][0] = InputButton(1, 0, red=3, green=0, pressed_red=3, pressed_green=3,
+    pad_state[2][0] = InputButton(2, 0, red=3, green=0, pressed_red=3, pressed_green=3,
                                   key_output=0x76,  # KEY_V
                                   flashing=True, description="Heat Sink")
     #Chaff
-    pad_state[2][0] = InputButton(2, 0, red=3, green=3, pressed_red=3, pressed_green=3,
+    pad_state[3][0] = InputButton(3, 0, red=3, green=3, pressed_red=3, pressed_green=3,
                                   key_output=0xCA,  # F9
                                   flashing=True, description="Chaff")
     #Deploy Shield Cell
-    pad_state[3][0] = InputButton(3, 0, red=0, green=3, pressed_red=3, pressed_green=3,
+    pad_state[4][0] = InputButton(4, 0, red=0, green=3, pressed_red=3, pressed_green=3,
                                   key_output=0xCB,  # F10
                                   flashing=True, description="Shield Cell")
+    #Flight Assist
+    pad_state[5][0] = ToggleButton(5, 0, red=3, green=3, toggled_red=3, toggled_green=0,
+                                   key_output_set=0x7A,  # KEY_Z,
+                                   key_output_cleared=0x7A, flashing=True, description="Flight Assist")
     #FSD
     pad_state[8][1] = InputButton(8, 1, red=3, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x6A,  # KEY_J,
@@ -71,52 +78,57 @@ def setup_ship(pad_state):
                                   key_output=0x78,  # KEY_X,
                                   flashing=False, description="0%")
     #Communications Panel
-    pad_state[0][7] = InputButton(0, 7, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[0][1] = InputButton(0, 1, red=3, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x32,  # KEY_2,
                                   flashing=False, description="Comms")
     #Target Panel
-    pad_state[0][8] = InputButton(0, 8, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[0][7] = InputButton(0, 7, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x31,  # KEY_1,
                                   flashing=False, description="Target Panel")
     #Systems Panel
-    pad_state[1][8] = InputButton(1, 8, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[2][7] = InputButton(2, 7, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x34,  # KEY_4,
                                   flashing=False, description="Systems Panel")
+    #Sensors Panel
+    pad_state[1][8] = InputButton(1, 8, red=0, green=3, pressed_red=3, pressed_green=0,
+                                  key_output=0x33,  # KEY_3,
+                                  flashing=False, description="Role Panel")
     #Galaxy Map
-    pad_state[0][6] = InputButton(0, 6, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[0][3] = InputButton(0, 3, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x69,  # KEY_I,
                                   flashing=False, description="Galaxy Map")
     #System Map
-    pad_state[1][6] = InputButton(1, 6, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[1][3] = InputButton(1, 3, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x6F,  # KEY_O
                                   flashing=False, description="System Map")
 
+
     # W
-    pad_state[1][3] = InputButton(1, 3, red=3, green=3, pressed_red=0, pressed_green=3,
+    pad_state[1][5] = InputButton(1, 5, red=3, green=3, pressed_red=0, pressed_green=3,
                                   key_output=0x77,  # KEY_W,
                                   flashing=False, description="Up")
     # A
-    pad_state[0][4] = InputButton(0, 4, red=3, green=3, pressed_red=0, pressed_green=3,
+    pad_state[0][6] = InputButton(0, 6, red=3, green=3, pressed_red=0, pressed_green=3,
                                   key_output=0x61,  # KEY_A,
                                   flashing=False, description="Left")
     # S
-    pad_state[1][5] = InputButton(1, 5, red=3, green=3, pressed_red=0, pressed_green=3,
+    pad_state[1][7] = InputButton(1, 7, red=3, green=3, pressed_red=0, pressed_green=3,
                                   key_output=0x73,  # KEY_S,
                                   flashing=False, description="Down")
     # D
-    pad_state[2][4] = InputButton(2, 4, red=3, green=3, pressed_red=0, pressed_green=3,
+    pad_state[2][6] = InputButton(2, 6, red=3, green=3, pressed_red=0, pressed_green=3,
                                   key_output=0x64,  # KEY_D,
                                   flashing=False, description="Right")
     #Select
-    pad_state[1][4] = InputButton(1, 4, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[1][6] = InputButton(1, 6, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x20,  # VK_SPACE,
                                   flashing=False, description="Select")
     #Previous Tab
-    pad_state[0][3] = InputButton(0, 3, red=1, green=2, pressed_red=3, pressed_green=0,
+    pad_state[0][5] = InputButton(0, 5, red=1, green=2, pressed_red=3, pressed_green=0,
                                   key_output=0x71,  # KEY_Q,
                                   flashing=False, description="Previous")
     #Next Tab
-    pad_state[2][3] = InputButton(2, 3, red=1, green=202, pressed_red=3, pressed_green=0,
+    pad_state[2][5] = InputButton(2, 5, red=1, green=2, pressed_red=3, pressed_green=0,
                                   key_output=0x65,  # KEY_E,
                                   flashing=False, description="Next")
 
@@ -192,10 +204,6 @@ def setup_ship(pad_state):
     pad_state[3][8] = InputButton(3, 8, red=1, green=2, pressed_red=0, pressed_green=3,
                                   key_output=0xD6,  # Page Down
                                   flashing=False, description="Decrease Range")
-    #Flight Assist
-    pad_state[4][0] = ToggleButton(4, 0, red=3, green=3, toggled_red=3, toggled_green=0,
-                                   key_output_set=0x7A,  # KEY_Z,
-                                   key_output_cleared=0x7A, flashing=True, description="Flight Assist")
     #Hyperspace
     pad_state[7][0] = InputButton(7, 0, red=1, green=2, pressed_red=3, pressed_green=0,
                                   key_output=0x2B,  # Add
@@ -206,19 +214,19 @@ def setup_ship(pad_state):
                                   flashing=True, description="Supercruise")
 
     #Wingman 1
-    pad_state[0][1] = InputButton(0, 1, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[1][1] = InputButton(1, 1, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x37,  # KEY_7,
                                   flashing=False, description="Wingman 1")
     #Wingman 2
-    pad_state[1][1] = InputButton(1, 1, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[2][1] = InputButton(2, 1, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x38,  # KEY_8,
                                   flashing=False, description="Wingman 2")
     #Wingman 3
-    pad_state[2][1] = InputButton(2, 1, red=0, green=3, pressed_red=3, pressed_green=0,
+    pad_state[3][1] = InputButton(3, 1, red=0, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x39,  # KEY_9,
                                   flashing=False, description="Wingman 3")
     #Wingman Nav-Lock
-    pad_state[3][1] = InputButton(3, 1, red=2, green=3, pressed_red=3, pressed_green=0,
+    pad_state[4][1] = InputButton(4, 1, red=2, green=3, pressed_red=3, pressed_green=0,
                                   key_output=0x2D,  # Minus
                                   flashing=False, description="Winman Nav-Lock")
 
@@ -234,4 +242,6 @@ def setup_ship(pad_state):
     pad_state[4][2] = InputButton(4, 2, red=3, green=0, pressed_red=3, pressed_green=3,
                                   key_output=0xD5,  # End
                                   flashing=False, description="Jettison Cargo")
+
+
 
